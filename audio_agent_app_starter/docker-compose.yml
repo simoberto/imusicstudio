@@ -46,18 +46,24 @@ services:
     context: ./frontend
     dockerfile: Dockerfile
     cache_from:
-     - ${DOCKER_REGISTRY:-local}/frontend:cache
+     - ${DOCKER_REGISTRY:-local}/frontend:cache # Keep this line
+    args: # ADD THIS SECTION
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-/api} # Default to relative /api if not set in .env
+      REACT_APP_WS_URL: ${REACT_APP_WS_URL:-/ws}   # Default to relative /ws if not set in .env
+      # REACT_APP_VERSION: ${VERSION:-2.0.0} # Example if version needs to be passed
+      # GENERATE_SOURCEMAP: "false" # Example if you want to force no sourcemaps
    container_name: aimusic-frontend
-   environment:
-    <<: *common-variables
-    REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:5678}
-    REACT_APP_WS_URL: ${REACT_APP_WS_URL:-ws://localhost:8080}
+   # environment: # These are runtime envs for the Nginx container serving the static files,
+                 # NOT for the React build process itself.
+    # <<: *common-variables
+    # REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:5678} # This has no effect on CRA build
+    # REACT_APP_WS_URL: ${REACT_APP_WS_URL:-ws://localhost:8080}   # This has no effect on CRA build
    networks:
     - frontend
    restart: unless-stopped
    healthcheck:
     <<: *healthcheck-defaults
-    test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+    test: ["CMD", "curl", "-f", "http://localhost:3000/health"] # Assumes frontend/nginx.conf has /health
    deploy:
     resources:
      limits:
