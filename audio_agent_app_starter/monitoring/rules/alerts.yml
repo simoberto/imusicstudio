@@ -1,0 +1,87 @@
+# audio_agent_app_starter/monitoring/rules/alerts.yml
+groups:
+  - name: ai-music-studio-alerts
+    rules:
+      - alert: HighErrorRateHttp
+        expr: rate(http_requests_total{job=~".*", status=~"5.."}[5m]) > 0.05 # 5% error rate
+        for: 2m
+        labels:
+          severity: critical
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "High HTTP error rate on service {{ $labels.job }} (Instance {{ $labels.instance }})"
+          description: "Service {{ $labels.job }} on instance {{ $labels.instance }} is experiencing an HTTP error rate above 5% for the last 2 minutes. Current value: {{ $value | printf "%.2f" }}%."
+
+      - alert: HighMemoryUsageContainer
+        # Calculates memory usage percentage for containers.
+        # Needs cadvisor or similar metrics for container_memory_usage_bytes and container_spec_memory_limit_bytes.
+        # If using node_exporter for host memory: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        # This example assumes container specific metrics are available.
+        expr: (sum(container_memory_usage_bytes{name!~".*prometheus.*", image!=""}) by (name) / sum(container_spec_memory_limit_bytes{name!~".*prometheus.*", image!=""}) by (name)) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          container_name: "{{ $labels.name }}"
+        annotations:
+          summary: "High memory usage for container {{ $labels.name }}"
+          description: "Container {{ $labels.name }} memory usage is above 90%. Current value: {{ $value | printf "%.2f" }}%."
+
+      - alert: ServiceDown
+        # Checks if a job/service scraped by Prometheus is down.
+        expr: up == 0
+        for: 1m # Alert if down for 1 minute
+        labels:
+          severity: critical
+          service: "{{ $labels.job }}" # or 'instance' depending on your setup
+        annotations:
+          summary: "Service {{ $labels.job }} (Instance {{ $labels.instance }}) is down."
+          description: "The Prometheus target {{ $labels.instance }} for job {{ $labels.job }} has been down for over 1 minute."
+
+      # n8n specific alerts (examples)
+      - alert: N8nHighExecutionErrorRate
+        expr: sum(rate(n8n_executions_failed_total[5m])) by (workflowId) / sum(rate(n8n_executions_started_total[5m])) by (workflowId) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          service: n8n
+          workflow: "{{ $labels.workflowId }}"
+        annotations:
+          summary: "High execution error rate for n8n workflow {{ $labels.workflowId }}"
+          description: "Workflow {{ $labels.workflowId }} has an error rate over 10% for the last 10 minutes. Current value: {{ $value | printf "%.2f" }}%."
+
+      - alert: N8nQueueTooLarge
+        # This metric might not exist by default, depends on n8n_metrics=true and what it exposes.
+        # Example hypothetical metric: n8n_bull_queue_active_jobs
+        expr: n8n_bull_queue_active_jobs{queue="default"} > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: n8n
+        annotations:
+          summary: "n8n job queue is too large"
+          description: "The n8n default job queue has over 100 active jobs for 5 minutes. Current value: {{ $value }}."
+
+      # Audiocraft specific alerts (examples, requires custom metrics from audiocraft)
+      # - alert: AudiocraftLowGpuUtilization
+      #   expr: avg_over_time(audiocraft_gpu_utilization_percent[5m]) < 10 and count_over_time(audiocraft_active_generations[5m]) > 0
+      #   for: 10m
+      #   labels:
+      #     severity: warning
+      #     service: audiocraft
+      #   annotations:
+      #     summary: "Audiocraft GPU utilization low while jobs are active"
+      #     description: "Audiocraft GPU utilization is below 10% despite active generation jobs."
+
+      # Disk Space Alert (using node_exporter metrics)
+      - alert: DiskSpaceRunningOut
+        # Assumes node_exporter is running and configured to be scraped by Prometheus
+        # This checks for filesystems mounted under / (e.g. /data if it's a mount point)
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+        for: 10m
+        labels:
+          severity: critical
+          instance: "{{ $labels.instance }}"
+          mountpoint: "{{ $labels.mountpoint }}"
+        annotations:
+          summary: "Disk space running out on {{ $labels.instance }} at {{ $labels.mountpoint }}"
+          description: "Less than 10% disk space available on {{ $labels.mountpoint }} at {{ $labels.instance }}. Current value: {{ $value | printf "%.2f" }}% free."

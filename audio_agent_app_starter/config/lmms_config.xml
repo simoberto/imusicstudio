@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<lmms-configuration>
+  <head version="1.0" app_version="1.2.2" written_by="AI Music Studio Setup"/>
+  <audio>
+    <!-- Using 'dummy' backend for headless rendering, or 'sdl' if needed and available -->
+    <audiodev backend="dummy" device="default" frames="1024" srate="44100"/>
+    <mididev backend="dummy" device="default"/>
+    <samplerate>44100</samplerate> <!-- Default sample rate -->
+    <bitdepth>16</bitdepth>       <!-- Default bit depth -->
+    <channels>2</channels>         <!-- Default to stereo output -->
+  </audio>
+  <paths>
+    <pluginpaths>
+        <!-- Add paths to VST/LADSPA plugins if used. Example: -->
+        <!-- <path>/usr/lib/vst</path> -->
+        <!-- <path>/opt/lmms/plugins</path> -->
+    </pluginpaths>
+    <vstpaths/> <!-- Kept from original, can be populated if VSTs are used -->
+    <ladspapaths/> <!-- Kept from original, for LADSPA plugins -->
+    <sf2paths>
+        <path>/soundfonts</path> <!-- Primary soundfont directory mounted in Docker -->
+        <path>/usr/share/sounds/sf2</path> <!-- Common system path for soundfonts -->
+    </sf2paths>
+    <stemplates>
+        <path>/templates</path> <!-- Primary template directory mounted in Docker -->
+    </stemplates>
+    <projects default_path="/data/projects"/> <!-- Default save/load path for projects if used by LMMS UI -->
+    <artwork default_path="/opt/lmms/artwork"/> <!-- Default artwork path -->
+    <backgrounds default_path="/opt/lmms/backgrounds"/> <!-- Default backgrounds path -->
+  </paths>
+  <general>
+    <language>en_US</language> <!-- Default language -->
+    <theme>default</theme>     <!-- Default theme -->
+    <autorecover enable="true" interval_sec="300"/> <!-- Auto-save/recover settings -->
+    <tooltips enable="true"/>
+    <compact_track_buttons enable="false"/>
+    <show_splash enable="false"/> <!-- Disable splash screen for headless -->
+    <hq_mode enable="true"/> <!-- High quality rendering mode -->
+    <buffer_size>1024</buffer_size> <!-- Audio buffer size, matches 'frames' above -->
+    <skip_plugin_scanning enable="false"/> <!-- Scan for plugins on startup -->
+  </general>
+  <midi>
+    <alsa_rawmidi_driver enable="false"/>
+    <alsa_seq_driver enable="true"/> <!-- ALSA sequencer often preferred on Linux -->
+    <oss_driver enable="false"/>
+  </midi>
+  <misc>
+    <plugin_embedding>auto</plugin_embedding> <!-- How plugins are embedded -->
+    <one_instrument_track enable="false"/>
+    <enable_note_labels enable="true"/>
+    <enable_octave_correction enable="true"/>
+  </misc>
+</lmms-configuration>

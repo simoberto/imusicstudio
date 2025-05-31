@@ -1,0 +1,88 @@
+{
+  "audio_processing": {
+    "default_sample_rate": 44100,
+    "default_bit_depth": 16,
+    "default_channels": 2,
+    "default_output_format": "wav",
+    "normalization_target_lufs": -14.0,
+    "normalization_true_peak_dbfs": -1.0,
+    "silence_threshold_db": -60,
+    "fade_duration_ms": 50
+  },
+  "music_generation": {
+    "default_duration_seconds": 30,
+    "default_temperature": 1.0,
+    "default_top_k": 250,
+    "default_top_p": 0.0,
+    "default_cfg_scale": 3.0,
+    "model_options": [
+      {"name": "Small", "value": "facebook/musicgen-small", "default": false},
+      {"name": "Medium", "value": "facebook/musicgen-medium", "default": true},
+      {"name": "Large", "value": "facebook/musicgen-large", "default": false}
+    ],
+    "instrument_specific_postprocessing": {
+      "bass": {
+        "lowpass_hz": 250,
+        "highpass_hz": 30,
+        "dynamic_comp_threshold_db": -20,
+        "dynamic_comp_ratio": 4.0
+      },
+      "drums": {
+        "transient_shaping_amount": 0.5,
+        "highpass_hz": 40
+      },
+      "default": {
+        "highpass_hz": 20
+      }
+    }
+  },
+  "mastering_chain": {
+    "enabled": true,
+    "stages": [
+      {
+        "name": "InitialEQ",
+        "type": "equalizer",
+        "params": {
+          "low_shelf_hz": 80, "low_shelf_gain_db": -1.0, "q_low": 0.7,
+          "high_shelf_hz": 12000, "high_shelf_gain_db": 1.0, "q_high": 0.7
+        },
+        "enabled": true
+      },
+      {
+        "name": "Dynamics",
+        "type": "multiband_compressor",
+        "params": {
+          "bands": [
+            {"freq_low": 0, "freq_high": 150, "threshold_db": -18, "ratio": 2.5, "attack_ms": 10, "release_ms": 100},
+            {"freq_low": 150, "freq_high": 2000, "threshold_db": -20, "ratio": 2.0, "attack_ms": 5, "release_ms": 80},
+            {"freq_low": 2000, "freq_high": 22050, "threshold_db": -16, "ratio": 1.8, "attack_ms": 2, "release_ms": 50}
+          ],
+          "makeup_gain_db": 2.0
+        },
+        "enabled": true
+      },
+      {
+        "name": "StereoWidener",
+        "type": "stereo_image",
+        "params": { "width_percent": 120, "low_bypass_hz": 150 },
+        "enabled": false
+      },
+      {
+        "name": "Limiter",
+        "type": "brickwall_limiter",
+        "params": { "threshold_dbfs": -0.5, "release_ms": 50 },
+        "enabled": true
+      }
+    ]
+  },
+  "quality_analysis": {
+    "clipping_threshold_dbfs": -0.1,
+    "silence_long_segment_seconds": 5,
+    "low_rms_threshold_dbfs": -35
+  },
+  "lmms_settings": {
+    "default_template_bpm": 120,
+    "soundfont_search_paths": ["/soundfonts/", "/usr/share/sounds/sf2/"],
+    "render_timeout_seconds": 300
+  }
+}

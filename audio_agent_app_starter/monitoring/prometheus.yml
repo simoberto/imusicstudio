@@ -1,0 +1,54 @@
+# audio_agent_app_starter/monitoring/prometheus.yml
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# rule_files specifies the path *inside the Prometheus container* where rule files are located.
+# The docker-compose.prod.yml has:
+#   volumes:
+#     - ./monitoring/rules:/etc/prometheus/rules:ro
+# The deploy.sh script (setup_monitoring_alerts function) creates a rules file at:
+#   $PROJECT_ROOT/monitoring/prometheus/rules.yml
+# This is a mismatch in paths.
+#
+# To resolve:
+# Option A: deploy.sh creates $PROJECT_ROOT/monitoring/rules/alerts.yml
+# Option B: docker-compose mounts ./monitoring/prometheus/rules.yml to /etc/prometheus/rules.yml (single file)
+#
+# Let's assume Option A for now, and the rules file will be named 'alerts.yml' inside the 'rules' directory.
+# So, on the host: audio_agent_app_starter/monitoring/rules/alerts.yml
+# Inside container: /etc/prometheus/rules/alerts.yml
+
+rule_files:
+  - "/etc/prometheus/rules/alerts.yml" # This file (alerts.yml) will be created in a later step in monitoring/rules/
+
+scrape_configs:
+  - job_name: "prometheus"
+    # Scrapes Prometheus server itself
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "n8n"
+    metrics_path: /metrics # n8n exposes metrics here if N8N_METRICS=true
+    static_configs:
+      - targets: ["n8n:5678"] # 'n8n' is the service name in docker-compose
+
+  # Add more jobs here for other services if they expose Prometheus metrics.
+  # Examples:
+  # - job_name: 'node_exporter' # For host metrics
+  #   static_configs:
+  #     - targets: ['node_exporter:9100'] # If node_exporter service is added
+
+  # - job_name: 'cadvisor' # For container metrics
+  #   static_configs:
+  #     - targets: ['cadvisor:8080'] # If cAdvisor service is added
+
+  # For services like Redis or PostgreSQL, dedicated exporters are typically used:
+  # - job_name: 'redis_exporter'
+  #   static_configs:
+  #     - targets: ['redis_exporter:9121']
+
+  # - job_name: 'postgres_exporter'
+  #   static_configs:
+  #     - targets: ['postgres_exporter:9187']

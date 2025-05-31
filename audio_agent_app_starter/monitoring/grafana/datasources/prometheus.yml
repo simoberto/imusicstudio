@@ -1,0 +1,42 @@
+# audio_agent_app_starter/monitoring/grafana/datasources/prometheus.yml
+
+# This file configures the Prometheus datasource for Grafana's provisioning system.
+# Grafana will automatically discover and add datasources defined in YAML files
+# placed in its configured provisioning/datasources path.
+# In docker-compose.prod.yml, this is:
+# volumes:
+#   - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+
+apiVersion: 1
+
+# list of datasources to insert/update depending
+# what's available in the database
+datasources:
+  # <string, required> name of the datasource. Required
+  - name: Prometheus
+    # <string, required> datasource type. Required
+    type: prometheus
+    # <string, required> access mode. direct or proxy. direct is default
+    access: proxy # Use proxy mode so Grafana server queries Prometheus (recommended)
+    # <string> url
+    url: http://prometheus:9090 # URL of the Prometheus server, 'prometheus' is the service name in docker-compose
+    # <bool> enable http basic authentication
+    basicAuth: false
+    # <string> basic auth username
+    # basicAuthUser: my_user
+    # <string> basic auth password
+    # basicAuthPassword: my_password
+    # <bool> if true, data source is default
+    isDefault: true
+    # <map> fields that will be converted to json and stored in jsonData
+    # jsonData:
+    #   graphiteVersion: "1.1"
+    #   tlsAuth: true
+    #   tlsAuthWithCACert: true
+    # <string> json object of data that will be encrypted in secureJsonData
+    # secureJsonData:
+    #   tlsCACert: "..."
+    #   tlsClientCert: "..."
+    #   tlsClientKey: "..."
+    # <bool> allow users to edit datasources from the UI.
+    editable: true # Or false to prevent UI edits if managed by provisioning only
