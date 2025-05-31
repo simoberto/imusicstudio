@@ -1,0 +1,168 @@
+/* frontend/src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import Google Font specified in index.html and tailwind.config.js */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Base styles */
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent; /* Disable tap highlight on mobile */
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+   'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+   sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  background: #111827; /* Default dark background (Tailwind gray-900) */
+                      /* This will be overridden by App.js gradient, but good fallback */
+  color: #e5e7eb; /* Default light text color (Tailwind gray-200) */
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Custom scrollbar styles for WebKit browsers */
+::-webkit-scrollbar {
+  width: 10px; /* Slightly wider for easier interaction */
+  height: 10px; /* For horizontal scrollbars if they appear */
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05); /* Darker track */
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.6); /* Tailwind purple-500 with opacity */
+  border-radius: 5px;
+  border: 2px solid transparent; /* Creates padding around thumb */
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.8); /* Darker purple on hover */
+}
+
+/* Firefox scrollbar styles (basic) */
+/* For more advanced Firefox scrollbars, you might need specific CSS rules if desired */
+/* For now, this ensures it's not overly wide like default Windows scrollbars */
+* {
+  scrollbar-width: thin; /* "auto" or "thin" */
+  scrollbar-color: rgba(139, 92, 246, 0.6) rgba(255, 255, 255, 0.05); /* thumb and track color */
+}
+
+
+/* Custom animations (as defined in the document) */
+@layer utilities {
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(147, 51, 234, 0.3), 0 0 30px rgba(59, 130, 246, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 40px rgba(147, 51, 234, 0.6), 0 0 50px rgba(59, 130, 246, 0.4);
+    }
+  }
+
+  .pulse-glow {
+    animation: pulse-glow 2.5s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-8px); /* Slightly less float */
+    }
+  }
+
+  .float {
+    animation: float 3.5s ease-in-out infinite;
+  }
+
+  /* Enhanced spin-slow for loading indicators */
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .spin-slow {
+    animation: spin-slow 2s linear infinite; /* Slightly faster than 3s */
+  }
+
+  /* Music note floating animation (example from original, can be used for decorative elements) */
+  @keyframes note-float {
+    0% { transform: translateY(0) rotate(0deg) scale(0.8); opacity: 0; }
+    10% { opacity: 1; transform: scale(1); }
+    90% { opacity: 1; transform: scale(1); }
+    100% { transform: translateY(-120px) rotate(20deg) scale(0.7); opacity: 0; }
+  }
+  .note-float {
+    animation: note-float 4s ease-in-out infinite;
+  }
+}
+
+/* Glass morphism utility (can be applied with Tailwind's arbitrary variants or as a component class) */
+/* Example: <div class="glass-effect"> */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.05); /* Darker glass for better contrast on dark bg */
+  backdrop-filter: blur(12px) saturate(150%); /* Added saturate for more pop */
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem; /* Tailwind rounded-xl */
+}
+
+/* Text gradient utilities (examples) */
+.text-gradient-purple-blue {
+  background-image: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent; /* Standard property */
+}
+
+
+/* General focus styles for accessibility (Tailwind focus rings are often preferred) */
+/* This is a fallback or supplement if needed */
+*:focus-visible {
+  outline: 2px solid rgba(167, 139, 250, 0.7); /* Tailwind violet-400 with opacity */
+  outline-offset: 2px;
+  border-radius: 2px; /* Slight rounding on the outline itself */
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 10pt;
+  }
+  /* Hide non-essential elements for print */
+  header, .sidebar, .actions, .no-print {
+    display: none !important;
+  }
+  main {
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+/* Additional global styles if needed */
+/* For example, default link styling if not handled by Tailwind's preflight */
+/* a {
+  color: #8b5cf6;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+  color: #7c3aed;
+} */

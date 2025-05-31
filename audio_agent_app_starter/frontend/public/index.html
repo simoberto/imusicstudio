@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-f8" />
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1a1a2e" /> <!-- Dark theme color matching the app bg -->
+  <meta
+    name="description"
+    content="AI Music Studio - Create professional music tracks with the power of Artificial Intelligence. Generate, mix, and master your next hit."
+  />
+  <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+  <!--
+    manifest.json provides metadata used when your web app is installed on a
+    user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+  -->
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+  <!-- Preconnect to Google Fonts for performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Google Fonts - Inter (as specified in index.css and tailwind.config.js) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Favicon variants (ensure these files exist in public/) -->
+  <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/favicon-16x16.png">
+
+  <!-- Web App Manifest general settings -->
+  <meta name="application-name" content="AI Music Studio">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AI Music Studio">
+  <meta name="mobile-web-app-capable" content="yes">
+
+
+  <!-- Open Graph / Facebook Meta Tags -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://aimusic.studio/"> <!-- Replace with actual production URL -->
+  <meta property="og:title" content="AI Music Studio - Create Professional Music with AI">
+  <meta property="og:description" content="Generate, mix, and master professional music tracks using advanced AI. No musical experience required. Perfect for creators, musicians, and businesses.">
+  <meta property="og:image" content="%PUBLIC_URL%/og-image.png"> <!-- Create an og-image.png (e.g., 1200x630) -->
+  <meta property="og:site_name" content="AI Music Studio">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter Card Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://aimusic.studio/"> <!-- Replace with actual production URL -->
+  <meta name="twitter:title" content="AI Music Studio - Create Professional Music with AI">
+  <meta name="twitter:description" content="Generate, mix, and master professional music tracks using advanced AI. No musical experience required.">
+  <meta name="twitter:image" content="%PUBLIC_URL%/og-image.png"> <!-- Create an og-image.png for Twitter (e.g., 1200x600) -->
+  <!-- <meta name="twitter:site" content="@YourTwitterHandle"> -->
+
+
+  <title>AI Music Studio - Create Music with AI</title>
+
+  <style>
+    /* Critical CSS for initial page load & loading spinner */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden; /* Prevent scrollbars during loading */
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      background: #111827; /* Tailwind gray-900, consistent with app theme */
+    }
+
+    .loading-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(145deg, #1a1a2e 0%, #16213e 45%, #0f3460 100%); /* Darker gradient */
+      display: flex;
+      flex-direction: column; /* Stack spinner and text */
+      align-items: center;
+      justify-content: center;
+      z-index: 99999; /* Ensure it's on top */
+      transition: opacity 0.5s ease-out, visibility 0.5s ease-out; /* For smooth fade out */
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .loading-spinner {
+      width: 50px; /* Slightly larger */
+      height: 50px;
+      border: 4px solid rgba(139, 92, 246, 0.2); /* Tailwind purple-500/20 */
+      border-top-color: #a78bfa; /* Tailwind violet-400 */
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .loading-logo { /* Optional: if you have a small SVG logo */
+      width: 60px;
+      height: 60px;
+      margin-bottom: 20px;
+      /* background-image: url('%PUBLIC_URL%/logo-spinner.svg'); */
+      /* background-size: contain; */
+      /* background-repeat: no-repeat; */
+      /* animation: pulse 1.5s ease-in-out infinite; */
+    }
+
+    .loading-text {
+      color: #d1d5db; /* Tailwind gray-300 */
+      margin-top: 20px;
+      font-size: 1rem; /* 16px */
+      font-weight: 500;
+      letter-spacing: 0.025em;
+    }
+
+    /* Animation for spinner */
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    /* Optional pulse animation for logo */
+    /* @keyframes pulse { 0%, 100% { opacity: 0.8; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1.05); } } */
+
+    /* Class to hide loading screen once app is ready */
+    body.app-loaded .loading-container {
+      opacity: 0;
+      visibility: hidden;
+    }
+    body.app-loaded {
+        overflow: auto; /* Restore scrollbars after load */
+    }
+  </style>
+</head>
+<body>
+  <noscript>
+    <div style="background-color: #111827; color: white; padding: 20px; text-align: center; height: 100vh; display: flex; align-items: center; justify-content: center;">
+      <h1>JavaScript is Required</h1>
+      <p>You need to enable JavaScript to run AI Music Studio.</p>
+    </div>
+  </noscript>
+
+  <!-- Initial loading screen -->
+  <div class="loading-container" id="loading-screen">
+    <!-- Optional: <div class="loading-logo"></div> -->
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading AI Music Studio...</div>
+  </div>
+
+  <div id="root">
+    <!-- React app will be injected here -->
+  </div>
+
+  <!--
+    This HTML file is a template.
+    If you open it directly in the browser, you will see an empty page.
+
+    You can add webfonts, meta tags, or analytics to this file.
+    The build step will place the bundled scripts into the <body> tag.
+
+    To begin the development, run `npm start` or `yarn start`.
+    To create a production bundle, use `npm run build` or `yarn build`.
+  -->
+  <!-- Service Worker Registration (from index.js, can also be here) -->
+  <!--
+  <script>
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('%PUBLIC_URL%/sw.js') // Assuming you have a sw.js
+          .then(function(registration) {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          })
+          .catch(function(err) {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+      });
+    }
+  </script>
+  -->
+</body>
+</html>

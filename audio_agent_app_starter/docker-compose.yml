@@ -1,0 +1,350 @@
+# docker-compose.yml - Versione Ottimizzata
+version: "3.9"
+
+x-common-variables: &common-variables
+ TZ: ${TZ:-UTC}
+ NODE_ENV: ${NODE_ENV:-production}
+ LOG_LEVEL: ${LOG_LEVEL:-info}
+
+x-healthcheck-defaults: &healthcheck-defaults
+ interval: 30s
+ timeout: 10s
+ retries: 3
+ start_period: 40s
+
+services:
+ # Reverse Proxy con Cache e SSL
+ nginx:
+  image: nginx:1.25-alpine
+  container_name: aimusic-nginx
+  ports:
+   - "80:80"
+   - "443:443"
+  volumes:
+   - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+   - ./nginx/ssl:/etc/nginx/ssl:ro
+   - nginx_cache:/var/cache/nginx
+   - ./data/public:/var/www/public:ro
+  networks:
+   - frontend
+  depends_on:
+   - frontend
+   - n8n
+  restart: unless-stopped
+  healthcheck:
+   <<: *healthcheck-defaults
+   test: ["CMD", "nginx", "-t"]
+  deploy:
+   resources:
+     limits:
+       cpus: '0.5'
+       memory: 512M
+
+ # Frontend React Ottimizzato
+ frontend:
+   build:
+    context: ./frontend
+    dockerfile: Dockerfile
+    cache_from:
+     - ${DOCKER_REGISTRY:-local}/frontend:cache
+   container_name: aimusic-frontend
+   environment:
+    <<: *common-variables
+    REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:5678}
+    REACT_APP_WS_URL: ${REACT_APP_WS_URL:-ws://localhost:8080}
+   networks:
+    - frontend
+   restart: unless-stopped
+   healthcheck:
+    <<: *healthcheck-defaults
+    test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+   deploy:
+    resources:
+     limits:
+       cpus: '0.5'
+       memory: 512M
+
+# WebSocket Server Ottimizzato
+websocket:
+ build:
+  context: ./websocket
+  dockerfile: Dockerfile
+ container_name: aimusic-websocket
+ ports:
+  - "8080:8080"
+ environment:
+  <<: *common-variables
+  REDIS_URL: redis://redis:6379
+ volumes:
+  - ./data:/data:ro
+ networks:
+  - backend
+ depends_on:
+  redis:
+   condition: service_healthy
+ restart: unless-stopped
+ healthcheck:
+  <<: *healthcheck-defaults
+  test: ["CMD", "node", "health-check.js"]
+ deploy:
+  resources:
+   limits:
+     cpus: '0.5'
+     memory: 256M
+
+# n8n Workflow Engine
+n8n:
+ image: n8nio/n8n:1.88.0
+ container_name: aimusic-n8n
+ environment:
+  <<: *common-variables
+  N8N_FEATURE_FLAG_MCP: true
+  N8N_PORT: 5678
+  N8N_PROTOCOL: http
+  N8N_HOST: 0.0.0.0
+  DB_TYPE: postgresdb
+  DB_POSTGRESDB_HOST: postgres
+  DB_POSTGRESDB_PORT: 5432
+  DB_POSTGRESDB_DATABASE: ${DB_NAME:-n8n}
+  DB_POSTGRESDB_USER: ${DB_USER:-n8n}
+  DB_POSTGRESDB_PASSWORD: ${DB_PASSWORD}
+  N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+  EXECUTIONS_MODE: queue
+  QUEUE_BULL_REDIS_HOST: redis
+  N8N_METRICS: true
+ ports:
+  - "5678:5678"
+ volumes:
+  - n8n_data:/home/node/.n8n
+  - ./data:/data
+  - ./scripts:/scripts:ro
+ networks:
+  - backend
+  - frontend
+ depends_on:
+  postgres:
+   condition: service_healthy
+  redis:
+   condition: service_healthy
+ restart: unless-stopped
+ healthcheck:
+  <<: *healthcheck-defaults
+  test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5678/healthz"]
+ deploy:
+  resources:
+   limits:
+     cpus: '2'
+     memory: 2G
+
+ # PostgreSQL Ottimizzato
+ postgres:
+  image: postgres:15-alpine
+  container_name: aimusic-postgres
+  shm_size: 256mb
+  environment:
+   POSTGRES_USER: ${DB_USER:-n8n}
+   POSTGRES_PASSWORD: ${DB_PASSWORD}
+   POSTGRES_DB: ${DB_NAME:-n8n}
+   POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+  volumes:
+   - postgres_data:/var/lib/postgresql/data
+   - ./config/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+  networks:
+   - backend
+  restart: unless-stopped
+  healthcheck:
+   <<: *healthcheck-defaults
+   test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+  command: >
+   postgres
+   -c shared_buffers=256MB
+   -c max_connections=200
+   -c effective_cache_size=1GB
+   -c checkpoint_completion_target=0.9
+   -c wal_buffers=16MB
+   -c random_page_cost=1.1
+  deploy:
+   resources:
+    limits:
+      cpus: '1'
+      memory: 1G
+
+ # Redis Cache Ottimizzato
+ redis:
+  image: redis:7-alpine
+  container_name: aimusic-redis
+  command: >
+   redis-server
+   --maxmemory 512mb
+   --maxmemory-policy allkeys-lru
+   --appendonly yes
+   --save 60 1000
+   --save 300 10
+   --save 900 1
+  volumes:
+   - redis_data:/data
+  networks:
+   - backend
+  restart: unless-stopped
+  healthcheck:
+   <<: *healthcheck-defaults
+   test: ["CMD", "redis-cli", "ping"]
+  deploy:
+   resources:
+     limits:
+       cpus: '0.5'
+       memory: 512M
+
+ # AI Audio Generation Engine
+ audiocraft:
+   build:
+    context: .
+    dockerfile: audiocraft/Dockerfile
+    args:
+      - BUILDKIT_INLINE_CACHE=1
+   container_name: aimusic-audiocraft
+   environment:
+    <<: *common-variables
+    CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES:-0}
+    PYTORCH_CUDA_ALLOC_CONF: "max_split_size_mb:512"
+    TRANSFORMERS_CACHE: /models/cache
+    HF_HOME: /models/cache
+    MODEL_CACHE_DIR: /models
+    BATCH_SIZE: ${BATCH_SIZE:-1}
+    MAX_WORKERS: ${MAX_WORKERS:-2}
+   volumes:
+    - ./scripts:/scripts:ro
+    - ./data:/data
+    - models_cache:/models
+    - /dev/shm:/dev/shm # Added for potentially better performance with shared memory
+   networks:
+    - backend
+   depends_on:
+    - redis
+   restart: unless-stopped
+   healthcheck:
+    <<: *healthcheck-defaults
+    test: ["CMD", "python3", "-c", "import torch; print(torch.cuda.is_available())"]
+    interval: 60s # Longer interval as GPU init can be slow
+   deploy:
+    resources:
+      reservations:
+        devices:
+         - driver: nvidia
+          count: 1 # Assuming 1 GPU, adjust if more
+          capabilities: [gpu]
+      limits:
+        cpus: '4' # Allow more CPUs for AI tasks
+        memory: 8G # Significant memory for AI models
+
+# LMMS Headless DAW
+lmms:
+ build:
+  context: .
+  dockerfile: lmms/Dockerfile
+ container_name: aimusic-lmms
+ environment:
+  <<: *common-variables
+  DISPLAY: :99
+  QT_QPA_PLATFORM: offscreen
+ volumes:
+  - ./templates:/templates:ro
+  - ./data:/data
+  - ./soundfonts:/soundfonts:ro
+  - /dev/shm:/dev/shm # Shared memory for Xvfb/PulseAudio
+ networks:
+  - backend
+ restart: unless-stopped
+ healthcheck:
+  <<: *healthcheck-defaults
+  test: ["CMD", "pgrep", "-f", "Xvfb"]
+ deploy:
+  resources:
+   limits:
+     cpus: '2'
+     memory: 2G
+
+# Audio Mastering Service
+matchering:
+ image: lallassu/matchering:latest
+ container_name: aimusic-matchering
+ volumes:
+  - ./data:/data
+ networks:
+  - backend
+ restart: unless-stopped
+ deploy:
+  resources:
+   limits:
+     cpus: '1'
+     memory: 1G
+
+# Monitoring - Prometheus
+prometheus:
+ image: prom/prometheus:latest
+ container_name: aimusic-prometheus
+ ports:
+  - "9090:9090"
+ volumes:
+  - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  - prometheus_data:/prometheus
+ command:
+   - '--config.file=/etc/prometheus/prometheus.yml'
+   - '--storage.tsdb.path=/prometheus'
+   - '--storage.tsdb.retention.time=30d'
+   - '--web.enable-lifecycle'
+ networks:
+   - monitoring
+ restart: unless-stopped
+ deploy:
+   resources:
+    limits:
+      cpus: '0.5'
+      memory: 512M
+
+ # Monitoring - Grafana
+ grafana:
+  image: grafana/grafana:latest
+  container_name: aimusic-grafana
+  ports:
+   - "3001:3000"
+  environment:
+   GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+   GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+  volumes:
+   - grafana_data:/var/lib/grafana
+   - ./monitoring/grafana:/etc/grafana/provisioning:ro
+  networks:
+   - monitoring
+  depends_on:
+   - prometheus
+  restart: unless-stopped
+  deploy:
+   resources:
+    limits:
+      cpus: '0.5'
+      memory: 512M
+
+networks:
+ frontend:
+   driver: bridge
+ backend:
+   driver: bridge
+ monitoring:
+   driver: bridge
+
+volumes:
+ n8n_data:
+  driver: local
+ postgres_data:
+  driver: local
+ redis_data:
+  driver: local
+ models_cache: # Renamed from 'models_cache' in audiocraft to match volume name
+  driver: local
+ nginx_cache:
+  driver: local
+ prometheus_data:
+  driver: local
+ grafana_data:
+  driver: local

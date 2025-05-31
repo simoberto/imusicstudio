@@ -1,0 +1,15 @@
+torch==2.2.1
+torchaudio==2.2.1
+librosa==0.10.1
+soundfile==0.12.1
+scipy==1.11.4
+numpy==1.24.3
+# scikit-learn==1.3.2 # Not directly used in the provided Python scripts (musicgen_stem.py, audio_analyzer.py, lmms_render.py)
+# matplotlib==3.8.2 # Not directly used for server-side processing logic
+pydub==0.25.1
+ffmpeg-python==0.2.0
+psutil==5.9.6
+audiocraft>=1.0.0 # Using a version range or ensure specific compatible version
+transformers>=4.0.0 # Using a version range or ensure specific compatible version
+accelerate>=0.20.0 # Often a dependency for transformers/audiocraft
+# xformers # Optional, can be tricky. If needed, specify version. Usually for performance.
